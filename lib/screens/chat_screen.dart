@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat/screens/users_messages.dart';
@@ -6,6 +5,7 @@ import 'package:flutter_chat/widgets/chat/messages.dart';
 import 'package:flutter_chat/widgets/chat/new_message.dart';
 
 class ChatScreen extends StatefulWidget {
+  static const namedRoute = '/chatScreen';
   final String userName;
   ChatScreen({this.userName});
   @override
@@ -40,7 +40,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return WillPopScope(
       onWillPop: () async {
         print('back button press...');
-        Navigator.of(context).push(
+        Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (ctx) => UsersMessages(),
           ),
@@ -49,34 +49,7 @@ class _ChatScreenState extends State<ChatScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.userName),
-          actions: <Widget>[
-            DropdownButton(
-              icon: Icon(
-                Icons.more_vert,
-                color: Theme.of(context).primaryIconTheme.color,
-              ),
-              items: [
-                DropdownMenuItem(
-                  child: Container(
-                    child: Row(
-                      children: <Widget>[
-                        Icon(Icons.exit_to_app),
-                        Text('LogOut')
-                      ],
-                    ),
-                  ),
-                  value: 'LogOut',
-                )
-              ],
-              onChanged: (itemIdentifier) {
-                if (itemIdentifier == 'LogOut') {
-                  FirebaseAuth.instance.signOut();
-                  Navigator.of(context).pop();
-                }
-              },
-            )
-          ],
+          title: Text('flutter chat '),
         ),
         body: Column(
           children: <Widget>[

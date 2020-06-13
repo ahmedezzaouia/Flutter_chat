@@ -9,14 +9,15 @@ class MessagesStream extends StatelessWidget {
 
   Future<Map<String, String>> getUserInfo() async {
     final user = await FirebaseAuth.instance.currentUser();
-    print(user.uid);
-    final userdata =
-        await Firestore.instance.collection('users').document(user.uid).get();
-    print(userdata['username']);
-    return {
-      'userUid': user.uid,
-      'userName': userdata['username'],
-    };
+    if (user != null) {
+      final userdata =
+          await Firestore.instance.collection('users').document(user.uid).get();
+      print(userdata['username']);
+      return {
+        'userUid': user.uid,
+        'userName': userdata['username'],
+      };
+    }
   }
 
   @override

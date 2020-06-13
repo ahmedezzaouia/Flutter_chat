@@ -1,9 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat/modal/user.dart';
+import 'package:flutter_chat/provider/delivered_message.dart';
+import 'package:flutter_chat/screens/auth_screen.dart';
 import 'package:flutter_chat/widgets/user_item.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 
 class UsersMessages extends StatefulWidget {
   @override
@@ -11,45 +14,26 @@ class UsersMessages extends StatefulWidget {
 }
 
 class _UsersMessagesState extends State<UsersMessages> {
+  String userName = '';
   QuerySnapshot usersDocs;
+
   Future lastMessage() async {
     print('start ...');
+
     usersDocs = await Firestore.instance.collection('chat').getDocuments();
-  }
+    final user = await FirebaseAuth.instance.currentUser();
+    final realUser =
+        await Firestore.instance.collection('users').document(user.uid).get();
+    userName = realUser.data['username'];
+    print('the userName : $userName');
 
-  getUserData({String anotherUser, String myName}) {
-    List<DocumentSnapshot> loadingUsers = [];
-    if (usersDocs.documents.length == 0 || usersDocs.documents == null) {
-      return [];
-    } else {
-      try {
-        loadingUsers = usersDocs.documents
-            .where(
-              (doc) =>
-                  doc['sendTo'] == myName && doc['userName'] == anotherUser ||
-                  //send to another
-                  doc['sendTo'] == anotherUser && doc['userName'] == myName,
-            )
-            .toList();
-        //SharedPreferences prefs = await SharedPreferences.getInstance();
-        // //check if the key is exist
-        // if (prefs.containsKey('myName_anotherUser')) {
-        //   print('yes this key is already exist');
-        // } else {
-        //   prefs.setInt('myName_anotherUser', loadingUsers.length);
-        //   print('stor the value with key :${'anotherUser_myName'}');
-        // }
-
-        loadingUsers.sort((a, b) => b['createdAt'].compareTo(a['createdAt']));
-      } catch (error) {
-        print(error.toString());
-      }
-    }
-
-    return loadingUsers.length == 0 ? '' : loadingUsers.first.data;
+    print('finish ...');
   }
 
   String formatdate(String date) {
+    if (date == null || date == '') {
+      return '';
+    }
     var datepars = DateTime.parse(date);
     var formatter = new DateFormat().add_jms();
     String formattedDate = formatter.format(datepars);
@@ -61,7 +45,7 @@ class _UsersMessagesState extends State<UsersMessages> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('My Users'),
+        title: Text('my users'),
       ),
       body: FutureBuilder(
         future: lastMessage(),
@@ -80,11 +64,12 @@ class _UsersMessagesState extends State<UsersMessages> {
                   child: CircularProgressIndicator(),
                 );
               }
+
               List<User> users = [];
 
               snapShot.data.documents.forEach(
                 (doc) {
-                  if (doc['username'] == 'hassan') {
+                  if (doc['username'] == userName) {
                     return;
                   } else {
                     final user = User(
@@ -97,17 +82,30 @@ class _UsersMessagesState extends State<UsersMessages> {
                 },
               );
 
-              return ListView.builder(
-                itemCount: users.length,
-                itemBuilder: (BuildContext context, int index) {
-                  Map<String, dynamic> data = getUserData(
-                      anotherUser: users[index].name, myName: 'hassan');
-                  print('check data : $data');
-                  return UserItem(
+              return Consumer<DeliveredMessage>(
+                builder: (ctx, delivered, child) => ListView.builder(
+                  itemCount: users.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    Map<String, dynamic> data = delivered.getUserData(
+                        anotherUser: users[index].name,
+                        usersDocs: usersDocs,
+                        userName: userName);
+                    print('check data : $data');
+                    print('textmesssage :${data['text']}');
+                    print('created at :${data['createdAt']}');
+                    String message;
+                    if (data['text'] == null) {
+                      message = '';
+                    } else {
+                      message = data['text'];
+                    }
+                    return UserItem(
                       user: users[index],
-                      text: data['text'],
-                      time: formatdate(data['createdAt']));
-                },
+                      text: message,
+                      time: formatdate(data['createdAt']),
+                    );
+                  },
+                ),
               );
             },
           );

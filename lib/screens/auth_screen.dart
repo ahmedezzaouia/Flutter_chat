@@ -7,6 +7,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class AuthScreen extends StatefulWidget {
+  static const namedRoute = '/AuthScreen';
+
   @override
   _AuthScreenState createState() => _AuthScreenState();
 }
